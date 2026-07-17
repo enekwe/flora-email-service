@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Shared With You - Passbook Flora</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background-color: #f9fafb;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .email-header {
+            background: linear-gradient(135deg, #b7046c 0%, #e11d48 100%);
+            color: white;
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .email-content {
+            padding: 32px 24px;
+        }
+
+        .email-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #111827;
+        }
+
+        .email-subtitle {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .email-body {
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 32px;
+        }
+
+        .email-body p {
+            margin-bottom: 16px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #b7046c 0%, #e11d48 100%);
+            color: white;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            margin: 24px 0;
+            transition: transform 0.2s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .document-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+
+        .document-info h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .document-meta {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 16px;
+        }
+
+        .info-box {
+            background-color: #f3f4f6;
+            border-left: 4px solid #b7046c;
+            padding: 16px;
+            margin: 24px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .permissions-badge {
+            display: inline-block;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+
+        .expiry-notice {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            margin: 24px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .share-icon {
+            font-size: 48px;
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .email-footer {
+            background-color: #f9fafb;
+            padding: 24px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .footer-links {
+            margin: 16px 0;
+        }
+
+        .footer-links a {
+            color: #b7046c;
+            text-decoration: none;
+            margin: 0 12px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive design */
+        @media (max-width: 600px) {
+            .email-container {
+                margin: 0;
+                box-shadow: none;
+            }
+
+            .email-header,
+            .email-content,
+            .email-footer {
+                padding: 24px 16px;
+            }
+
+            .email-title {
+                font-size: 20px;
+            }
+
+            .cta-button {
+                display: block;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header with Flora Logo and Brand Gradient -->
+        <div class="email-header">
+            <img src="https://flora.passbook.vc/Passbook_Flora_PinkDirt(1).png" alt="Passbook Flora" style="height: 48px; width: auto; margin: 0 auto 16px; display: block;" />
+            <h1 style="font-size: 28px; font-weight: 700; margin: 0;">Passbook Flora</h1>
+            <p style="font-size: 16px; opacity: 0.9; margin: 8px 0 0 0; font-weight: 500;">Venture Studio Operating System</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="email-content">
+            <h2 class="email-title">🔗 Document Shared With You</h2>
+            <p class="email-subtitle">You have been granted access to a new document</p>
+
+            <div class="email-body">
+                <p>Hi <strong>{{name}}</strong>,</p>
+
+                <p><strong>{{sharedBy}}</strong> has shared a document with you:</p>
+
+                <div class="document-card">
+                    <div class="share-icon">🔗</div>
+                    <div class="document-info">
+                        <h3>{{documentName}}</h3>
+                        <div class="document-meta">
+                            <span class="permissions-badge">{{permissions}} access</span>
+                            <br>
+                            <strong>Document Type:</strong> {{documentType}}<br>
+                            <strong>Shared On:</strong> {{sharedAt}}
+                            {{#if hasExpiration}}
+                            <br><strong>Access Expires:</strong> {{expiresAt}}
+                            {{/if}}
+                        </div>
+                        {{#if message}}
+                        <p style="color: #6b7280; font-style: italic; border-left: 3px solid #e5e7eb; padding-left: 12px; margin-top: 12px;">
+                            "{{message}}"
+                        </p>
+                        {{/if}}
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin: 32px 0;">
+                    <a href="{{accessLink}}" class="cta-button">Open Document</a>
+                </div>
+
+                {{#if hasExpiration}}
+                <div class="expiry-notice">
+                    <p><strong>⏰ Limited Time Access:</strong> This document access will expire on <strong>{{expiresAt}}</strong>. Please review the document before the access expires.</p>
+                </div>
+                {{/if}}
+
+                <div class="info-box">
+                    <p><strong>📋 Your Access Level:</strong></p>
+                    <ul style="margin: 8px 0 0 20px;">
+                        <li><strong>View:</strong> You can read and download the document</li>
+                        {{#if canEdit}}
+                        <li><strong>Edit:</strong> You can make changes to the document</li>
+                        <li><strong>Share:</strong> You can share this document with others</li>
+                        {{/if}}
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>🔒 Security Notes:</strong></p>
+                    <ul style="margin: 8px 0 0 20px;">
+                        <li>This document is encrypted and secure</li>
+                        <li>All access is logged for audit purposes</li>
+                        <li>Do not share your access link with others</li>
+                        <li>Contact support if you believe this was sent in error</li>
+                    </ul>
+                </div>
+
+                <p>If you have any questions about this document or need assistance accessing it, please contact <strong>{{sharedBy}}</strong> or our support team at <a href="mailto:{{supportEmail}}" style="color: #b7046c;">{{supportEmail}}</a>.</p>
+
+                <p>Best regards,<br>
+                <strong>The Passbook Flora Team</strong></p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="email-footer">
+            <!-- Quick Links -->
+            <div class="footer-links">
+                <a href="{{frontendUrl}}/documents">Document Library</a>
+                <a href="{{frontendUrl}}/support">Support</a>
+                <a href="{{frontendUrl}}">Dashboard</a>
+                <a href="{{frontendUrl}}/privacy">Privacy Policy</a>
+            </div>
+
+            <!-- Passbook Stamp Logo -->
+            <div style="margin: 20px 0;">
+                <img src="https://flora.passbook.vc/passbook-logo.png" alt="Passbook" style="width: 32px; height: 32px; opacity: 0.7; display: block; margin: 0 auto;" />
+            </div>
+
+            <!-- Legal Information -->
+            <div style="margin: 20px 0; line-height: 1.4;">
+                <p style="font-weight: 600; margin-bottom: 8px;">Passbook Media LLC</p>
+                <p>8911 Independence Ave<br>
+                Canoga Park, CA 91304<br>
+                United States</p>
+            </div>
+
+            <!-- Copyright -->
+            <p style="margin: 16px 0;">&copy; {{currentYear}} Passbook Media LLC. All rights reserved.</p>
+            <p>Passbook Flora - Venture Studio Operating System</p>
+
+            <!-- Light GDPR Compliance Section -->
+            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af;">
+                <p>This sharing notification was sent to <strong>{{email}}</strong>.</p>
+
+                <p style="margin-top: 12px;">
+                    You can manage your notification preferences in your dashboard settings.
+                    For privacy-related inquiries, contact
+                    <a href="mailto:privacy@passbook.vc" style="color: #b7046c;">privacy@passbook.vc</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

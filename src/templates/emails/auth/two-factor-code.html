@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Two-Factor Authentication Code</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      background-color: white;
+      border-radius: 10px;
+      padding: 40px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: #2563eb;
+      margin-bottom: 10px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+    .code-container {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      margin: 30px 0;
+    }
+    .code {
+      font-size: 42px;
+      font-weight: bold;
+      letter-spacing: 8px;
+      color: white;
+      font-family: 'Courier New', monospace;
+      margin: 10px 0;
+    }
+    .code-label {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+    .expires {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .message {
+      font-size: 16px;
+      color: #4b5563;
+      margin: 20px 0;
+      line-height: 1.8;
+    }
+    .warning {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .warning-title {
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: 8px;
+    }
+    .warning-text {
+      color: #78350f;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .help-section {
+      background-color: #f3f4f6;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 30px 0;
+    }
+    .help-title {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 10px;
+    }
+    .help-text {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+    .footer-links {
+      margin: 15px 0;
+    }
+    .footer-links a {
+      color: #2563eb;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    .security-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="security-icon">🔒</div>
+      <div class="logo">Passbook Flora</div>
+      <div class="title">Your Two-Factor Authentication Code</div>
+    </div>
+
+    <p class="message">
+      Hello <strong>{{name}}</strong>,
+    </p>
+
+    <p class="message">
+      You requested a two-factor authentication code to access your account. Use the code below to complete your login:
+    </p>
+
+    <div class="code-container">
+      <div class="code-label">Your Verification Code</div>
+      <div class="code">{{code}}</div>
+      <div class="expires">⏱️ Expires in {{expiresIn}}</div>
+    </div>
+
+    <p class="message">
+      Enter this code in the verification screen to continue. This code is valid for {{expiresIn}} only.
+    </p>
+
+    <div class="warning">
+      <div class="warning-title">⚠️ Security Notice</div>
+      <div class="warning-text">
+        If you didn't request this code, please ignore this email and consider changing your password immediately. Never share this code with anyone, including Passbook Flora staff.
+      </div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-title">Need Help?</div>
+      <div class="help-text">
+        If you're having trouble logging in or didn't request this code, please contact our support team at <a href="mailto:{{supportEmail}}" style="color: #2563eb;">{{supportEmail}}</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>This email was sent to <strong>{{email}}</strong></p>
+      <div class="footer-links">
+        <a href="{{frontendUrl}}">Visit Passbook Flora</a> |
+        <a href="{{frontendUrl}}/help">Help Center</a> |
+        <a href="{{frontendUrl}}/security">Security</a>
+      </div>
+      <p>&copy; {{currentYear}} Passbook Flora. All rights reserved.</p>
+      <p style="margin-top: 10px; color: #d1d5db; font-size: 11px;">
+        This is an automated security email. Please do not reply.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

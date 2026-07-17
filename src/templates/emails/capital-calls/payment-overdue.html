@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVERDUE: Capital Call Payment - Passbook Flora</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; background-color: #f9fafb; }
+        .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .email-header { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 32px 24px; text-align: center; }
+        .email-content { padding: 32px 24px; }
+        .email-title { font-size: 24px; font-weight: 700; margin-bottom: 16px; color: #dc2626; }
+        .escalation-badge { display: inline-block; background-color: #fef2f2; color: #dc2626; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 24px; border: 2px solid #dc2626; }
+        .overdue-card { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 3px solid #dc2626; border-radius: 12px; padding: 24px; margin: 24px 0; }
+        .overdue-amount { font-size: 40px; font-weight: 900; color: #991b1b; text-align: center; margin-bottom: 8px; }
+        .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { font-weight: 600; color: #374151; }
+        .detail-value { color: #6b7280; font-weight: 500; }
+        .critical-box { background-color: #fef2f2; border: 3px solid #dc2626; padding: 20px; margin: 24px 0; border-radius: 8px; }
+        .warning-box { background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+        .cta-button { display: inline-block; background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 700; text-align: center; margin: 24px 0; font-size: 16px; }
+        .email-footer { background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280; }
+        .footer-links { margin: 16px 0; }
+        .footer-links a { color: #b7046c; text-decoration: none; margin: 0 12px; }
+        @media (max-width: 600px) {
+            .email-container { margin: 0; box-shadow: none; }
+            .email-header, .email-content, .email-footer { padding: 24px 16px; }
+            .overdue-amount { font-size: 32px; }
+            .detail-row { flex-direction: column; padding: 8px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <img src="https://flora.passbook.vc/Passbook_Flora_PinkDirt(1).png" alt="Passbook Flora" style="height: 48px; width: auto; margin: 0 auto 16px; display: block;" />
+            <h1 style="font-size: 28px; font-weight: 700; margin: 0;">Passbook Flora</h1>
+            <p style="font-size: 16px; opacity: 0.9; margin: 8px 0 0 0; font-weight: 500;">Venture Studio Operating System</p>
+        </div>
+
+        <div class="email-content">
+            <h2 class="email-title">🚨 OVERDUE: Capital Call Payment</h2>
+
+            <div class="escalation-badge">
+                {{escalationMessage}}
+            </div>
+
+            <p>Dear <strong>{{name}}</strong>,</p>
+
+            <p><strong style="color: #dc2626;">This is a formal notice</strong> that your capital call payment for <strong>{{fundName}}</strong> is <strong style="color: #dc2626;">{{daysOverdue}} days overdue</strong>.</p>
+
+            <div class="overdue-card">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="overdue-amount">${{totalOutstanding}}</div>
+                    <div style="font-size: 16px; color: #991b1b; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">TOTAL AMOUNT OVERDUE</div>
+                </div>
+
+                <div style="background-color: white; border-radius: 8px; padding: 20px; margin-top: 16px;">
+                    <div class="detail-row">
+                        <span class="detail-label">Fund:</span>
+                        <span class="detail-value">{{fundName}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Call Number:</span>
+                        <span class="detail-value">{{callNumber}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Original Amount:</span>
+                        <span class="detail-value">${{callAmount}}</span>
+                    </div>
+                    {{#if hasLateFee}}
+                    <div class="detail-row">
+                        <span class="detail-label">Late Fee ({{penaltyPercentage}}%):</span>
+                        <span class="detail-value" style="color: #dc2626; font-weight: 700;">${{lateFeeAmount}}</span>
+                    </div>
+                    {{/if}}
+                    <div class="detail-row">
+                        <span class="detail-label">Original Due Date:</span>
+                        <span class="detail-value">{{originalDueDate}}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Days Overdue:</span>
+                        <span class="detail-value" style="color: #dc2626; font-weight: 900; font-size: 18px;">{{daysOverdue}} DAYS</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">New Due Date:</span>
+                        <span class="detail-value" style="color: #dc2626; font-weight: 700;">{{newDueDate}}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 32px 0;">
+                <a href="{{callDetailsLink}}" class="cta-button">MAKE PAYMENT NOW</a>
+            </div>
+
+            <div class="critical-box">
+                <p style="font-size: 18px; font-weight: 700; color: #dc2626; margin-bottom: 12px;">⚠️ IMMEDIATE ACTION REQUIRED</p>
+                <p style="margin-bottom: 12px;"><strong>Payment must be remitted immediately to avoid further consequences:</strong></p>
+                <ul style="margin: 8px 0 0 20px; color: #374151;">
+                    <li style="margin-bottom: 8px;">{{#if hasLateFee}}Additional late fees are accruing daily{{else}}Late fees may be applied if payment is not received immediately{{/if}}</li>
+                    <li style="margin-bottom: 8px;">Default provisions in your subscription agreement may be triggered</li>
+                    {{#if isFinalNotice}}
+                    <li style="margin-bottom: 8px; color: #dc2626; font-weight: 700;">This is your FINAL NOTICE before legal proceedings begin</li>
+                    {{/if}}
+                    <li style="margin-bottom: 8px;">Your investor status and future allocation rights may be affected</li>
+                </ul>
+            </div>
+
+            {{#if isFinalNotice}}
+            <div style="background-color: #7f1d1d; color: white; padding: 20px; margin: 24px 0; border-radius: 8px;">
+                <p style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">⚖️ LEGAL NOTICE</p>
+                <p style="margin-bottom: 12px;">{{legalNotice}}</p>
+                <p style="font-weight: 600;">Failure to remit payment within 5 business days from the date of this notice will result in:</p>
+                <ul style="margin: 8px 0 0 20px;">
+                    <li>Referral to legal counsel for collection proceedings</li>
+                    <li>Additional legal fees and costs added to your outstanding balance</li>
+                    <li>Potential forfeiture of capital interests as specified in fund documents</li>
+                </ul>
+            </div>
+            {{else}}
+            <div class="warning-box">
+                <p><strong>📋 Legal Notice:</strong> {{legalNotice}}</p>
+            </div>
+            {{/if}}
+
+            <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
+                <p><strong>📞 Payment Assistance:</strong> If you are experiencing difficulties making this payment, please contact us immediately:</p>
+                <ul style="margin: 8px 0 0 20px;">
+                    <li>Email: {{adminEmail}}</li>
+                    <li>Phone: {{adminPhone}}</li>
+                    <li>We may be able to discuss payment arrangements</li>
+                </ul>
+            </div>
+
+            <p style="color: #dc2626; font-weight: 600;">Please treat this matter with the urgency it requires. We expect immediate payment or contact within 48 hours.</p>
+
+            <p>Sincerely,<br>
+            <strong>{{fundManagerName}}</strong><br>
+            <em>Fund Administrator</em><br>
+            Passbook Flora</p>
+        </div>
+
+        <div class="email-footer">
+            <div class="footer-links">
+                <a href="{{callDetailsLink}}">Make Payment</a>
+                <a href="https://flora.passbook.vc/support">Contact Support</a>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <img src="https://flora.passbook.vc/passbook-logo.png" alt="Passbook" style="width: 32px; height: 32px; opacity: 0.7; display: block; margin: 0 auto;" />
+            </div>
+
+            <div style="margin: 20px 0; line-height: 1.4;">
+                <p style="font-weight: 600; margin-bottom: 8px;">Passbook Media LLC</p>
+                <p>8911 Independence Ave<br>
+                Canoga Park, CA 91304<br>
+                United States</p>
+            </div>
+
+            <p style="margin: 16px 0;">&copy; {{currentYear}} Passbook Media LLC. All rights reserved.</p>
+            <p>Passbook Flora - Venture Studio Operating System</p>
+
+            <div style="margin-top: 16px; font-size: 12px; color: #9ca3af;">
+                <p>This overdue notice was sent to <strong>{{email}}</strong>. This is a legally binding notice. Please retain for your records.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

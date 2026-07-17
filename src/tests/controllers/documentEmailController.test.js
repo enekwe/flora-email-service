@@ -1,11 +1,13 @@
 const documentEmailController = require('../../controllers/documentEmailController');
 const emailService = require('../../services/emailService');
 const templateService = require('../../services/templateService');
+const EmailLog = require('../../models/EmailLog');
 const logger = require('../../config/logger');
 
 // Mock dependencies
 jest.mock('../../services/emailService');
 jest.mock('../../services/templateService');
+jest.mock('../../models/EmailLog');
 jest.mock('../../config/logger');
 
 describe('Document Email Controller', () => {
@@ -20,10 +22,13 @@ describe('Document Email Controller', () => {
       json: jest.fn()
     };
     jest.clearAllMocks();
+
+    // Setup default EmailLog mock
+    EmailLog.create = jest.fn().mockResolvedValue({ _id: 'log-id-123' });
   });
 
-  describe('sendDocumentUploadNotification', () => {
-    it('should send document upload notification successfully', async () => {
+  describe('sendDocumentNotification', () => {
+    it('should send document notification successfully', async () => {
       req.body = {
         email: 'user@example.com',
         name: 'John User',
@@ -38,7 +43,7 @@ describe('Document Email Controller', () => {
       templateService.renderTemplate.mockResolvedValue(mockHtml);
       emailService.sendEmail.mockResolvedValue(mockResult);
 
-      await documentEmailController.sendDocumentUploadNotification(req, res);
+      await documentEmailController.sendDocumentNotification(req, res);
 
       expect(templateService.renderTemplate).toHaveBeenCalledWith(
         'documents/document-notification',
@@ -60,10 +65,20 @@ describe('Document Email Controller', () => {
         htmlContent: mockHtml
       });
 
+      expect(EmailLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          emailType: 'document_upload',
+          recipient: 'user@example.com',
+          recipientName: 'John User',
+          brevoMessageId: 'msg123',
+          deliveryStatus: 'sent'
+        })
+      );
+
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: 'Document upload notification sent successfully',
+        message: 'Document notification sent successfully',
         messageId: 'msg123'
       });
     });
@@ -74,43 +89,13 @@ describe('Document Email Controller', () => {
         // Missing documentName, uploadedBy, viewLink
       };
 
-      await documentEmailController.sendDocumentUploadNotification(req, res);
+      await documentEmailController.sendDocumentNotification(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
         error: expect.stringContaining('Missing required fields')
       });
-    });
-
-    it('should include optional fields when provided', async () => {
-      req.body = {
-        email: 'user@example.com',
-        name: 'John User',
-        documentName: 'Agreement.pdf',
-        uploadedBy: 'Admin',
-        viewLink: 'https://flora.passbook.vc/documents/123',
-        documentType: 'Legal Document',
-        fileSize: '2.5 MB',
-        description: 'Important agreement for review'
-      };
-
-      const mockHtml = '<html>Document Upload Notification</html>';
-      const mockResult = { messageId: 'msg123', success: true };
-
-      templateService.renderTemplate.mockResolvedValue(mockHtml);
-      emailService.sendEmail.mockResolvedValue(mockResult);
-
-      await documentEmailController.sendDocumentUploadNotification(req, res);
-
-      expect(templateService.renderTemplate).toHaveBeenCalledWith(
-        'documents/document-notification',
-        expect.objectContaining({
-          documentType: 'Legal Document',
-          fileSize: '2.5 MB',
-          description: 'Important agreement for review'
-        })
-      );
     });
 
     it('should default name from email if not provided', async () => {
@@ -127,7 +112,7 @@ describe('Document Email Controller', () => {
       templateService.renderTemplate.mockResolvedValue(mockHtml);
       emailService.sendEmail.mockResolvedValue(mockResult);
 
-      await documentEmailController.sendDocumentUploadNotification(req, res);
+      await documentEmailController.sendDocumentNotification(req, res);
 
       expect(templateService.renderTemplate).toHaveBeenCalledWith(
         'documents/document-notification',
@@ -150,40 +135,141 @@ describe('Document Email Controller', () => {
       templateService.renderTemplate.mockResolvedValue('<html></html>');
       emailService.sendEmail.mockRejectedValue(mockError);
 
-      await documentEmailController.sendDocumentUploadNotification(req, res);
+      await documentEmailController.sendDocumentNotification(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Failed to send document upload notification',
+        error: 'Failed to send document notification',
         details: undefined
       });
     });
   });
 
-  describe('sendSignatureRequest', () => {
-    it('should send signature request successfully', async () => {
+  describe('sendDocumentReviewRequest', () => {
+    it('should send review request successfully with urgent priority', async () => {
       req.body = {
-        email: 'signer@example.com',
-        name: 'Jane Signer',
-        documentName: 'Contract.pdf',
-        requestedBy: 'Fund Manager',
-        signatureLink: 'https://flora.passbook.vc/sign/abc123'
+        email: 'reviewer@example.com',
+        name: 'Jane Reviewer',
+        documentName: 'Legal Agreement.pdf',
+        requestedBy: 'Legal Team',
+        reviewLink: 'https://flora.passbook.vc/review/456',
+        dueDate: 'December 31, 2026',
+        priority: 'urgent'
       };
 
-      const mockHtml = '<html>Signature Request</html>';
+      const mockHtml = '<html>Review Request</html>';
       const mockResult = { messageId: 'msg456', success: true };
 
       templateService.renderTemplate.mockResolvedValue(mockHtml);
       emailService.sendEmail.mockResolvedValue(mockResult);
 
+      await documentEmailController.sendDocumentReviewRequest(req, res);
+
+      expect(templateService.renderTemplate).toHaveBeenCalledWith(
+        'documents/document-review-request',
+        expect.objectContaining({
+          name: 'Jane Reviewer',
+          email: 'reviewer@example.com',
+          documentName: 'Legal Agreement.pdf',
+          requestedBy: 'Legal Team',
+          priority: 'urgent',
+          isUrgent: true
+        })
+      );
+
+      expect(emailService.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('URGENT')
+        })
+      );
+
+      expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should use normal priority by default', async () => {
+      req.body = {
+        email: 'reviewer@example.com',
+        documentName: 'Document.pdf',
+        requestedBy: 'Admin',
+        reviewLink: 'https://flora.passbook.vc/review/456'
+      };
+
+      const mockHtml = '<html>Review Request</html>';
+      const mockResult = { messageId: 'msg456', success: true };
+
+      templateService.renderTemplate.mockResolvedValue(mockHtml);
+      emailService.sendEmail.mockResolvedValue(mockResult);
+
+      await documentEmailController.sendDocumentReviewRequest(req, res);
+
+      expect(emailService.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: '📋 Review Requested: Document.pdf'
+        })
+      );
+    });
+
+    it('should return 400 when required fields are missing', async () => {
+      req.body = {
+        email: 'reviewer@example.com',
+        documentName: 'Document.pdf'
+      };
+
+      await documentEmailController.sendDocumentReviewRequest(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'Missing required fields: email, documentName, requestedBy, reviewLink'
+      });
+    });
+  });
+
+  describe('sendSignatureRequest', () => {
+    it('should send signature request successfully with tracking', async () => {
+      req.body = {
+        email: 'signer@example.com',
+        name: 'Bob Signer',
+        documentName: 'Investment Agreement.pdf',
+        requestedBy: 'Fund Manager',
+        signatureLink: 'https://flora.passbook.vc/sign/789',
+        urgency: 'urgent',
+        trackOpens: true
+      };
+
+      const mockHtml = '<html>Signature Request</html>';
+      const mockResult = { messageId: 'msg789', success: true };
+
+      templateService.renderTemplate.mockResolvedValue(mockHtml);
+      emailService.sendEmail.mockResolvedValue(mockResult);
+
       await documentEmailController.sendSignatureRequest(req, res);
+
+      expect(templateService.renderTemplate).toHaveBeenCalledWith(
+        'documents/signature-request',
+        expect.objectContaining({
+          urgency: 'urgent',
+          isUrgent: true
+        })
+      );
+
+      expect(EmailLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          emailType: 'signature_request',
+          metadata: expect.objectContaining({
+            trackOpens: true,
+            urgency: 'urgent'
+          })
+        })
+      );
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         message: 'Signature request sent successfully',
-        messageId: 'msg456'
+        messageId: 'msg789',
+        trackingEnabled: true
       });
     });
 
@@ -201,15 +287,13 @@ describe('Document Email Controller', () => {
       });
     });
 
-    it('should include urgency and due date when provided', async () => {
+    it('should send normal priority signature request', async () => {
       req.body = {
         email: 'signer@example.com',
         name: 'Jane Signer',
         documentName: 'Contract.pdf',
         requestedBy: 'Fund Manager',
-        signatureLink: 'https://flora.passbook.vc/sign/abc123',
-        dueDate: '2026-08-01',
-        urgency: 'urgent'
+        signatureLink: 'https://flora.passbook.vc/sign/abc123'
       };
 
       const mockHtml = '<html>Signature Request</html>';
@@ -220,201 +304,120 @@ describe('Document Email Controller', () => {
 
       await documentEmailController.sendSignatureRequest(req, res);
 
-      expect(templateService.renderTemplate).toHaveBeenCalledWith(
-        'documents/document-notification',
+      expect(emailService.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          dueDate: '2026-08-01',
-          urgency: 'urgent'
+          subject: '✍️ Signature Required: Contract.pdf'
         })
       );
     });
   });
 
-  describe('sendSignatureComplete', () => {
-    it('should send signature complete notification when all parties signed', async () => {
+  describe('sendDocumentShared', () => {
+    it('should send document shared notification successfully', async () => {
       req.body = {
-        email: 'admin@example.com',
-        name: 'Admin User',
-        documentName: 'Contract.pdf',
-        signedBy: 'Jane Signer',
-        viewLink: 'https://flora.passbook.vc/documents/123',
-        allPartiesSigned: true
+        email: 'recipient@example.com',
+        name: 'Alice Recipient',
+        documentName: 'Shared Document.pdf',
+        sharedBy: 'Bob Sharer',
+        accessLink: 'https://flora.passbook.vc/shared/xyz',
+        permissions: 'edit',
+        expiresAt: 'January 30, 2027'
       };
 
-      const mockHtml = '<html>Signature Complete</html>';
-      const mockResult = { messageId: 'msg789', success: true };
+      const mockHtml = '<html>Document Shared</html>';
+      const mockResult = { messageId: 'msgxyz', success: true };
 
       templateService.renderTemplate.mockResolvedValue(mockHtml);
       emailService.sendEmail.mockResolvedValue(mockResult);
 
-      await documentEmailController.sendSignatureComplete(req, res);
+      await documentEmailController.sendDocumentShared(req, res);
 
-      expect(emailService.sendEmail).toHaveBeenCalledWith({
-        to: {
-          email: 'admin@example.com',
-          name: 'Admin User'
-        },
-        subject: expect.stringContaining('Fully Executed'),
-        htmlContent: mockHtml
-      });
+      expect(templateService.renderTemplate).toHaveBeenCalledWith(
+        'documents/document-shared',
+        expect.objectContaining({
+          name: 'Alice Recipient',
+          documentName: 'Shared Document.pdf',
+          sharedBy: 'Bob Sharer',
+          permissions: 'edit',
+          canEdit: true,
+          expiresAt: 'January 30, 2027',
+          hasExpiration: true
+        })
+      );
+
+      expect(emailService.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: '🔗 Bob Sharer shared a document with you: Shared Document.pdf'
+        })
+      );
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: 'Signature complete notification sent successfully',
-        messageId: 'msg789'
+        message: 'Document shared notification sent successfully',
+        messageId: 'msgxyz'
       });
     });
 
-    it('should send partial signature notification when not all parties signed', async () => {
+    it('should handle view-only permissions', async () => {
       req.body = {
-        email: 'admin@example.com',
-        name: 'Admin User',
-        documentName: 'Contract.pdf',
-        signedBy: 'Jane Signer',
-        viewLink: 'https://flora.passbook.vc/documents/123',
-        allPartiesSigned: false
+        email: 'recipient@example.com',
+        documentName: 'Document.pdf',
+        sharedBy: 'Sharer',
+        accessLink: 'https://flora.passbook.vc/shared/xyz',
+        permissions: 'view'
       };
 
-      const mockHtml = '<html>Signature Added</html>';
-      const mockResult = { messageId: 'msg789', success: true };
+      const mockHtml = '<html>Document Shared</html>';
+      const mockResult = { messageId: 'msgxyz', success: true };
 
       templateService.renderTemplate.mockResolvedValue(mockHtml);
       emailService.sendEmail.mockResolvedValue(mockResult);
 
-      await documentEmailController.sendSignatureComplete(req, res);
+      await documentEmailController.sendDocumentShared(req, res);
 
-      expect(emailService.sendEmail).toHaveBeenCalledWith({
-        to: {
-          email: 'admin@example.com',
-          name: 'Admin User'
-        },
-        subject: expect.stringContaining('Signature Added'),
-        htmlContent: mockHtml
-      });
+      expect(templateService.renderTemplate).toHaveBeenCalledWith(
+        'documents/document-shared',
+        expect.objectContaining({
+          permissions: 'view',
+          canEdit: false,
+          hasExpiration: false
+        })
+      );
     });
 
-    it('should return 400 if required fields are missing', async () => {
+    it('should return 400 when required fields are missing', async () => {
       req.body = {
-        email: 'admin@example.com'
+        email: 'recipient@example.com',
+        documentName: 'Document.pdf'
       };
 
-      await documentEmailController.sendSignatureComplete(req, res);
+      await documentEmailController.sendDocumentShared(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: expect.stringContaining('Missing required fields')
-      });
-    });
-  });
-
-  describe('sendSignatureReminder', () => {
-    it('should send signature reminder successfully', async () => {
-      req.body = {
-        email: 'signer@example.com',
-        name: 'Jane Signer',
-        documentName: 'Contract.pdf',
-        signatureLink: 'https://flora.passbook.vc/sign/abc123'
-      };
-
-      const mockHtml = '<html>Signature Reminder</html>';
-      const mockResult = { messageId: 'msg999', success: true };
-
-      templateService.renderTemplate.mockResolvedValue(mockHtml);
-      emailService.sendEmail.mockResolvedValue(mockResult);
-
-      await documentEmailController.sendSignatureReminder(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith({
-        success: true,
-        message: 'Signature reminder sent successfully',
-        messageId: 'msg999'
+        error: 'Missing required fields: email, documentName, sharedBy, accessLink'
       });
     });
 
-    it('should send urgent reminder when signature is overdue', async () => {
+    it('should handle errors gracefully', async () => {
       req.body = {
-        email: 'signer@example.com',
-        name: 'Jane Signer',
-        documentName: 'Contract.pdf',
-        signatureLink: 'https://flora.passbook.vc/sign/abc123',
-        daysOverdue: 3
+        email: 'recipient@example.com',
+        documentName: 'Document.pdf',
+        sharedBy: 'Sharer',
+        accessLink: 'https://flora.passbook.vc/shared/xyz'
       };
 
-      const mockHtml = '<html>Signature Reminder</html>';
-      const mockResult = { messageId: 'msg999', success: true };
+      templateService.renderTemplate.mockRejectedValue(new Error('Template not found'));
 
-      templateService.renderTemplate.mockResolvedValue(mockHtml);
-      emailService.sendEmail.mockResolvedValue(mockResult);
+      await documentEmailController.sendDocumentShared(req, res);
 
-      await documentEmailController.sendSignatureReminder(req, res);
-
-      expect(templateService.renderTemplate).toHaveBeenCalledWith(
-        'documents/document-notification',
-        expect.objectContaining({
-          daysOverdue: 3,
-          reminderMessage: expect.stringContaining('3 days overdue'),
-          urgency: 'urgent'
-        })
-      );
-
-      expect(emailService.sendEmail).toHaveBeenCalledWith({
-        to: {
-          email: 'signer@example.com',
-          name: 'Jane Signer'
-        },
-        subject: expect.stringContaining('OVERDUE'),
-        htmlContent: mockHtml
-      });
-    });
-
-    it('should send normal reminder when not overdue', async () => {
-      req.body = {
-        email: 'signer@example.com',
-        name: 'Jane Signer',
-        documentName: 'Contract.pdf',
-        signatureLink: 'https://flora.passbook.vc/sign/abc123',
-        daysOverdue: 0
-      };
-
-      const mockHtml = '<html>Signature Reminder</html>';
-      const mockResult = { messageId: 'msg999', success: true };
-
-      templateService.renderTemplate.mockResolvedValue(mockHtml);
-      emailService.sendEmail.mockResolvedValue(mockResult);
-
-      await documentEmailController.sendSignatureReminder(req, res);
-
-      expect(templateService.renderTemplate).toHaveBeenCalledWith(
-        'documents/document-notification',
-        expect.objectContaining({
-          urgency: 'normal'
-        })
-      );
-
-      expect(emailService.sendEmail).toHaveBeenCalledWith({
-        to: {
-          email: 'signer@example.com',
-          name: 'Jane Signer'
-        },
-        subject: expect.stringContaining('Reminder'),
-        htmlContent: mockHtml
-      });
-    });
-
-    it('should return 400 if required fields are missing', async () => {
-      req.body = {
-        email: 'signer@example.com'
-      };
-
-      await documentEmailController.sendSignatureReminder(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: expect.stringContaining('Missing required fields')
+        error: 'Failed to send document shared notification',
+        details: undefined
       });
     });
   });

@@ -1,11 +1,13 @@
 const capitalCallEmailController = require('../../controllers/capitalCallEmailController');
 const emailService = require('../../services/emailService');
 const templateService = require('../../services/templateService');
+const EmailLog = require('../../models/EmailLog');
 const logger = require('../../config/logger');
 
 // Mock dependencies
 jest.mock('../../services/emailService');
 jest.mock('../../services/templateService');
+jest.mock('../../models/EmailLog');
 jest.mock('../../config/logger');
 
 describe('Capital Call Email Controller', () => {
@@ -22,8 +24,12 @@ describe('Capital Call Email Controller', () => {
     jest.clearAllMocks();
   });
 
-  describe('sendCapitalCallNotice', () => {
-    it('should send capital call notice successfully', async () => {
+  describe('sendCapitalCallNotification', () => {
+    beforeEach(() => {
+      EmailLog.create = jest.fn().mockResolvedValue({ _id: 'log-id-123' });
+    });
+
+    it('should send capital call notification successfully', async () => {
       req.body = {
         email: 'investor@example.com',
         name: 'John Investor',
@@ -38,7 +44,7 @@ describe('Capital Call Email Controller', () => {
       templateService.renderTemplate.mockResolvedValue(mockHtml);
       emailService.sendEmail.mockResolvedValue(mockResult);
 
-      await capitalCallEmailController.sendCapitalCallNotice(req, res);
+      await capitalCallEmailController.sendCapitalCallNotification(req, res);
 
       expect(templateService.renderTemplate).toHaveBeenCalledWith(
         'capital-calls/capital-call-notification',
@@ -61,7 +67,7 @@ describe('Capital Call Email Controller', () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
-        message: 'Capital call notice sent successfully',
+        message: 'Capital call notification sent successfully',
         messageId: 'msg123'
       });
     });
@@ -72,7 +78,7 @@ describe('Capital Call Email Controller', () => {
         // Missing name, fundName, callAmount, dueDate
       };
 
-      await capitalCallEmailController.sendCapitalCallNotice(req, res);
+      await capitalCallEmailController.sendCapitalCallNotification(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
@@ -96,7 +102,7 @@ describe('Capital Call Email Controller', () => {
       templateService.renderTemplate.mockResolvedValue(mockHtml);
       emailService.sendEmail.mockResolvedValue(mockResult);
 
-      await capitalCallEmailController.sendCapitalCallNotice(req, res);
+      await capitalCallEmailController.sendCapitalCallNotification(req, res);
 
       expect(templateService.renderTemplate).toHaveBeenCalledWith(
         'capital-calls/capital-call-notification',
@@ -119,12 +125,12 @@ describe('Capital Call Email Controller', () => {
       templateService.renderTemplate.mockResolvedValue('<html></html>');
       emailService.sendEmail.mockRejectedValue(mockError);
 
-      await capitalCallEmailController.sendCapitalCallNotice(req, res);
+      await capitalCallEmailController.sendCapitalCallNotification(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Failed to send capital call notice',
+        error: 'Failed to send capital call notification',
         details: undefined
       });
     });
@@ -149,7 +155,7 @@ describe('Capital Call Email Controller', () => {
       templateService.renderTemplate.mockResolvedValue(mockHtml);
       emailService.sendEmail.mockResolvedValue(mockResult);
 
-      await capitalCallEmailController.sendCapitalCallNotice(req, res);
+      await capitalCallEmailController.sendCapitalCallNotification(req, res);
 
       expect(templateService.renderTemplate).toHaveBeenCalledWith(
         'capital-calls/capital-call-notification',
@@ -316,6 +322,8 @@ describe('Capital Call Email Controller', () => {
     });
 
     it('should include overdue messaging when daysOverdue > 0', async () => {
+      EmailLog.create = jest.fn().mockResolvedValue({ _id: 'log-id-reminder' });
+
       req.body = {
         email: 'investor@example.com',
         name: 'John Investor',
@@ -334,9 +342,10 @@ describe('Capital Call Email Controller', () => {
       await capitalCallEmailController.sendCapitalCallReminder(req, res);
 
       expect(templateService.renderTemplate).toHaveBeenCalledWith(
-        'capital-calls/capital-call-notification',
+        'capital-calls/capital-call-reminder',
         expect.objectContaining({
-          callPurpose: expect.stringContaining('7 days overdue')
+          urgencyLevel: 'overdue',
+          reminderMessage: expect.stringContaining('7 days overdue')
         })
       );
 
@@ -362,6 +371,169 @@ describe('Capital Call Email Controller', () => {
         success: false,
         error: expect.stringContaining('Missing required fields')
       });
+    });
+  });
+
+  describe('sendPaymentConfirmation (new method)', () => {
+    beforeEach(() => {
+      EmailLog.create = jest.fn().mockResolvedValue({ _id: 'log-id-456' });
+    });
+
+    it('should send payment confirmation with all details', async () => {
+      req.body = {
+        email: 'investor@example.com',
+        name: 'John Investor',
+        fundName: 'Test Fund I',
+        paymentAmount: 50000,
+        paymentDate: '2026-07-15',
+        paymentMethod: 'Wire Transfer',
+        transactionReference: 'WIRE-123456',
+        confirmationNumber: 'CONF-2026-001'
+      };
+
+      templateService.renderTemplate.mockResolvedValue('<html>Confirmation</html>');
+      emailService.sendEmail.mockResolvedValue({ messageId: 'msg-456' });
+
+      await capitalCallEmailController.sendPaymentConfirmation(req, res);
+
+      expect(templateService.renderTemplate).toHaveBeenCalledWith(
+        'capital-calls/payment-confirmation',
+        expect.objectContaining({
+          paymentAmount: '50,000.00',
+          paymentDate: '2026-07-15',
+          paymentMethod: 'Wire Transfer',
+          confirmationNumber: 'CONF-2026-001'
+        })
+      );
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: 'Payment confirmation sent successfully',
+          confirmationNumber: 'CONF-2026-001'
+        })
+      );
+    });
+
+    it('should auto-generate confirmation number if not provided', async () => {
+      req.body = {
+        email: 'investor@example.com',
+        name: 'John Investor',
+        fundName: 'Test Fund I',
+        paymentAmount: 50000,
+        paymentDate: '2026-07-15'
+      };
+
+      templateService.renderTemplate.mockResolvedValue('<html>Confirmation</html>');
+      emailService.sendEmail.mockResolvedValue({ messageId: 'msg-456' });
+
+      await capitalCallEmailController.sendPaymentConfirmation(req, res);
+
+      expect(templateService.renderTemplate).toHaveBeenCalledWith(
+        'capital-calls/payment-confirmation',
+        expect.objectContaining({
+          confirmationNumber: expect.stringMatching(/^CONF-\d+$/)
+        })
+      );
+    });
+  });
+
+  describe('sendPaymentOverdueNotice (new method)', () => {
+    beforeEach(() => {
+      EmailLog.create = jest.fn().mockResolvedValue({ _id: 'log-id-789' });
+    });
+
+    it('should send first notice with correct escalation level', async () => {
+      req.body = {
+        email: 'investor@example.com',
+        name: 'John Investor',
+        fundName: 'Test Fund I',
+        callAmount: 50000,
+        originalDueDate: '2026-07-01',
+        daysOverdue: 10,
+        escalationLevel: 'first_notice'
+      };
+
+      templateService.renderTemplate.mockResolvedValue('<html>Overdue</html>');
+      emailService.sendEmail.mockResolvedValue({ messageId: 'msg-789' });
+
+      await capitalCallEmailController.sendPaymentOverdueNotice(req, res);
+
+      expect(templateService.renderTemplate).toHaveBeenCalledWith(
+        'capital-calls/payment-overdue',
+        expect.objectContaining({
+          escalationLevel: 'first_notice',
+          escalationMessage: 'Immediate action required',
+          isFinalNotice: false
+        })
+      );
+
+      expect(emailService.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: '🚨 OVERDUE: Capital Call Payment - Test Fund I'
+        })
+      );
+    });
+
+    it('should send final notice with FINAL NOTICE tag in subject', async () => {
+      req.body = {
+        email: 'investor@example.com',
+        name: 'John Investor',
+        fundName: 'Test Fund I',
+        callAmount: 50000,
+        originalDueDate: '2026-06-01',
+        daysOverdue: 45,
+        escalationLevel: 'final_notice'
+      };
+
+      templateService.renderTemplate.mockResolvedValue('<html>Final Notice</html>');
+      emailService.sendEmail.mockResolvedValue({ messageId: 'msg-final' });
+
+      await capitalCallEmailController.sendPaymentOverdueNotice(req, res);
+
+      expect(emailService.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subject: expect.stringContaining('[FINAL NOTICE]')
+        })
+      );
+
+      expect(EmailLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            priority: 'high',
+            escalationLevel: 'final_notice'
+          })
+        })
+      );
+    });
+
+    it('should calculate total with late fees', async () => {
+      req.body = {
+        email: 'investor@example.com',
+        name: 'John Investor',
+        fundName: 'Test Fund I',
+        callAmount: 50000,
+        originalDueDate: '2026-06-01',
+        daysOverdue: 30,
+        lateFeeAmount: 2500,
+        penaltyPercentage: 5
+      };
+
+      templateService.renderTemplate.mockResolvedValue('<html>Overdue</html>');
+      emailService.sendEmail.mockResolvedValue({ messageId: 'msg-789' });
+
+      await capitalCallEmailController.sendPaymentOverdueNotice(req, res);
+
+      expect(templateService.renderTemplate).toHaveBeenCalledWith(
+        'capital-calls/payment-overdue',
+        expect.objectContaining({
+          hasLateFee: true,
+          lateFeeAmount: '2,500.00',
+          penaltyPercentage: 5,
+          totalOutstanding: expect.stringMatching(/52,500\.00/)
+        })
+      );
     });
   });
 });
