@@ -5,9 +5,9 @@
 ### Step 1: Create Service in Railway Dashboard (2 minutes)
 
 1. Go to https://railway.app
-2. Open your project: **EnGarde Suite**
-3. Click **"+ New"** → **"Empty Service"**
-4. Name it: `flora-email-service-production`
+2. Open your project: **Passbook Flora**
+3. Find your service: `flora-email-service` (you already renamed it)
+4. Verify GitHub connection in Settings → Source
 5. Click **"Settings"** tab
 6. Under **"Source"** → **"Connect Repo"**
 7. Select: `enekwe/flora-email-service`
