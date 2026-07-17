@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Company Invitation</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f8f9fa; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+    .header { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); padding: 40px 30px; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; }
+    .content { padding: 40px 30px; }
+    .content h2 { color: #1a1a1a; font-size: 20px; margin-bottom: 20px; }
+    .content p { color: #555; margin-bottom: 16px; }
+    .button { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+    .button:hover { opacity: 0.9; }
+    .details { background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .details p { margin: 8px 0; }
+    .details strong { color: #1a1a1a; }
+    .footer { background-color: #f8f9fa; padding: 30px; text-align: center; font-size: 12px; color: #777; }
+    .footer a { color: #3498db; text-decoration: none; }
+    .highlight { background-color: #ebf5fb; padding: 20px; border-left: 4px solid #3498db; border-radius: 4px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>{{platformName}}</h1>
+    </div>
+
+    <div class="content">
+      <h2>Invitation from {{contextName}}</h2>
+
+      <p>Hi {{inviteeName}},</p>
+
+      <p>You've been invited by <strong>{{contextName}}</strong> to join {{platformName}}.</p>
+
+      <div class="highlight">
+        <p style="margin: 0;"><strong>Company:</strong> {{contextName}}</p>
+        <p style="margin: 8px 0 0 0;">{{contextDescription}}</p>
+      </div>
+
+      {{#if personalMessage}}
+      <div class="details">
+        <p><strong>Message from the team:</strong></p>
+        <p>{{personalMessage}}</p>
+      </div>
+      {{/if}}
+
+      <div class="details">
+        <p><strong>Your Role:</strong> {{capitalize role}}</p>
+        <p><strong>Company:</strong> {{contextName}}</p>
+        <p><strong>Invitation Expires:</strong> {{formatDate tokenExpiresAt}}</p>
+      </div>
+
+      <p>As a member of {{contextName}} on {{platformName}}, you'll have access to:</p>
+      <ul style="color: #555;">
+        <li>Company performance dashboard</li>
+        <li>Document management and sharing</li>
+        <li>Investor relations tools</li>
+        <li>Reporting and analytics</li>
+        <li>Team collaboration features</li>
+      </ul>
+
+      <p>Click the button below to accept your invitation:</p>
+
+      <a href="{{frontendUrl}}/invitations/accept?token={{token}}" class="button">Accept Invitation</a>
+
+      <p style="font-size: 14px; color: #777;">Or copy and paste this link into your browser:<br>
+      {{frontendUrl}}/invitations/accept?token={{token}}</p>
+
+      <p>This invitation will expire in 7 days. If you have any questions, please reach out to the {{contextName}} team directly.</p>
+
+      <p>Best regards,<br>
+      <strong>{{contextName}}</strong><br>
+      via {{platformName}}</p>
+    </div>
+
+    <div class="footer">
+      <p>&copy; {{currentYear}} {{platformName}}. All rights reserved.</p>
+      <p>Need help? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+    </div>
+  </div>
+</body>
+</html>
