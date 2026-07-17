@@ -37,4 +37,11 @@ router.post('/resend-verification', validateEmailRequest, authEmailController.re
  */
 router.post('/welcome', authenticate, validateEmailRequest, authEmailController.sendWelcomeEmail);
 
+/**
+ * @route   POST /api/v1/emails/auth/two-factor-code
+ * @desc    Send two-factor authentication code
+ * @access  Public
+ */
+router.post('/two-factor-code', validateEmailRequest, authEmailController.sendTwoFactorCode);
+
 module.exports = router;

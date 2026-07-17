@@ -1,28 +1,91 @@
-# Flora Invitations Microservice
+# Flora Email Service
 
-Comprehensive invitation management microservice for the Flora Fund Management Platform. Handles platform invitations with sender context resolution, personalized email templates, and secure token-based acceptance.
+Comprehensive email microservice for the Flora Fund Management Platform. Handles all email types including invitations, authentication, capital calls, documents, invitation requests, and system notifications with sender context resolution, personalized templates, and reliable delivery via Brevo.
 
 ## Features
 
+- **20+ Email Types**: Complete coverage for all Flora email workflows
+  - Platform invitations (7 types: GP, LP, Admin, Founder, Generic)
+  - Authentication (password reset, email verification, welcome)
+  - Capital calls (notices, distributions, reminders, bulk)
+  - Documents (upload, signature requests, completions, reminders)
+  - Invitation requests (5-step workflow)
+  - System notifications (maintenance, announcements, bulk)
 - **Sender Context Resolution**: Automatically resolves sender context (GP fund, LP entity, Company, or Platform admin)
 - **Personalized Email Templates**: Context-aware email templates using Handlebars
 - **Brevo Integration**: Reliable email delivery via Brevo API with retry logic
 - **LP Entity Tracking**: Distinguishes between individual and institutional LPs
 - **RBAC**: Role-based access control at all API endpoints
-- **Audit Logging**: Comprehensive logging of all invitation operations
-- **Token Security**: Crypto-secure invitation tokens with expiration
+- **Audit Logging**: Comprehensive logging of all email operations
+- **Token Security**: Crypto-secure tokens with expiration
 - **MongoDB Transactions**: Ensures data consistency for multi-step operations
+- **Retry Logic**: Exponential backoff for failed email deliveries
+- **Rate Limiting**: Protects against abuse (100 requests per 15 minutes)
 
 ## Architecture
 
 ```
-Routes → Controllers → Services → Models
+┌────────────────────────────────────────────────────────────────┐
+│                     Flora Email Service                         │
+│                    (flora-email-service)                        │
+├────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │                     API Routes Layer                      │ │
+│  │  - /api/v1/invitations/*                                 │ │
+│  │  - /api/v1/emails/auth/*                                 │ │
+│  │  - /api/v1/emails/capital-calls/*                        │ │
+│  │  - /api/v1/emails/documents/*                            │ │
+│  │  - /api/v1/emails/invitation-requests/*                  │ │
+│  │  - /api/v1/emails/system/*                               │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                           ↓                                    │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │                   Middleware Layer                        │ │
+│  │  - JWT Authentication                                     │ │
+│  │  - RBAC (Role-Based Access Control)                      │ │
+│  │  - Request Validation                                     │ │
+│  │  - Rate Limiting                                          │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                           ↓                                    │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │                  Controllers Layer                        │ │
+│  │  - invitationController                                   │ │
+│  │  - authEmailController                                    │ │
+│  │  - capitalCallEmailController                            │ │
+│  │  - documentEmailController                               │ │
+│  │  - invitationRequestEmailController                      │ │
+│  │  - systemEmailController                                 │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                           ↓                                    │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │                   Services Layer                          │ │
+│  │  - emailService (Brevo API)                              │ │
+│  │  - templateService (Handlebars)                          │ │
+│  │  - contextService (Sender resolution)                    │ │
+│  │  - auditService (Logging)                                │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                           ↓                                    │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │                    Models Layer                           │ │
+│  │  - PlatformInvitation (MongoDB)                          │ │
+│  │  - EmailAuditLog (future)                                │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+                           ↓
+        ┌──────────────────┴──────────────────┐
+        │                                      │
+    ┌───▼────┐                          ┌─────▼──────┐
+    │ MongoDB│                          │ Brevo API  │
+    │        │                          │ (SendGrid) │
+    └────────┘                          └────────────┘
 ```
 
 Following the Flora Development Rules pattern:
 - **Routes**: Define API endpoints with validation and RBAC
 - **Controllers**: Handle HTTP requests and responses
-- **Services**: Business logic (context resolution, email, audit)
+- **Services**: Business logic (context resolution, email delivery, audit)
 - **Models**: Mongoose schemas with instance/static methods
 
 ## Directory Structure

@@ -1,17 +1,20 @@
 const logger = require('../config/logger');
 const templateService = require('../services/templateService');
 const emailService = require('../services/emailService');
+const EmailLog = require('../models/EmailLog');
 
 /**
  * Capital Call Email Controller
  * Handles capital call and distribution notice emails to LPs
+ * Implements 4 core methods with EmailLog tracking for audit trail
  */
 
 /**
- * Send capital call notification
- * @route POST /api/v1/emails/capital-calls/send
+ * Send capital call notification to LP(s)
+ * @route POST /api/v1/emails/capital-calls/notification
+ * @description Sends initial capital call notice with wire instructions
  */
-exports.sendCapitalCallNotice = async (req, res) => {
+exports.sendCapitalCallNotification = async (req, res) => {
   try {
     const {
       email,
@@ -98,7 +101,30 @@ exports.sendCapitalCallNotice = async (req, res) => {
     // Send email via Brevo
     const result = await emailService.sendEmail(emailData);
 
-    logger.info('Capital call notice sent successfully', {
+    // Log email to database for tracking
+    await EmailLog.create({
+      emailType: 'capital_call',
+      recipient: email,
+      recipientName: name,
+      subject: emailData.subject,
+      templateUsed: 'capital-calls/capital-call-notification',
+      brevoMessageId: result.messageId,
+      sentAt: new Date(),
+      deliveryStatus: 'sent',
+      metadata: {
+        fundName,
+        callAmount,
+        callNumber,
+        dueDate,
+        callPurpose
+      },
+      relatedFund: req.body.fundId || null,
+      senderEmail: process.env.BREVO_SENDER_EMAIL,
+      senderName: process.env.BREVO_SENDER_NAME || 'Passbook Flora',
+      provider: 'brevo'
+    });
+
+    logger.info('Capital call notification sent successfully', {
       email,
       fundName,
       callAmount,
@@ -107,19 +133,38 @@ exports.sendCapitalCallNotice = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Capital call notice sent successfully',
+      message: 'Capital call notification sent successfully',
       messageId: result.messageId
     });
 
   } catch (error) {
-    logger.error('Capital call notice error:', {
+    logger.error('Capital call notification error:', {
       error: error.message,
       stack: error.stack
     });
 
+    // Log failed email attempt
+    try {
+      await EmailLog.create({
+        emailType: 'capital_call',
+        recipient: req.body.email,
+        recipientName: req.body.name,
+        subject: `💰 Capital Call Notice - ${req.body.fundName}`,
+        templateUsed: 'capital-calls/capital-call-notification',
+        sentAt: new Date(),
+        deliveryStatus: 'failed',
+        errorMessage: error.message,
+        errorStack: error.stack,
+        metadata: { fundName: req.body.fundName },
+        provider: 'brevo'
+      });
+    } catch (logError) {
+      logger.error('Failed to log email error:', logError);
+    }
+
     res.status(500).json({
       success: false,
-      error: 'Failed to send capital call notice',
+      error: 'Failed to send capital call notification',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

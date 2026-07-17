@@ -3,6 +3,7 @@ const logger = require('../config/logger');
 const emailConfig = require('../config/email');
 const templateService = require('./templateService');
 const { retryWithBackoff } = require('../utils/helpers');
+const EmailLog = require('../models/EmailLog');
 
 /**
  * Email Service
@@ -74,27 +75,57 @@ class EmailService {
   }
 
   /**
-   * Send email via Brevo API with retry logic
+   * Send email via Brevo API with retry logic and EmailLog audit trail
    */
-  async sendEmail({ to, subject, htmlContent }) {
+  async sendEmail({ to, subject, htmlContent, emailType = 'other', metadata = {}, templateUsed = null, attachments = [] }) {
+    const emailLog = new EmailLog({
+      emailType,
+      recipient: to.email,
+      recipientName: to.name,
+      subject,
+      templateUsed,
+      senderEmail: this.senderEmail,
+      senderName: this.senderName,
+      provider: 'brevo',
+      metadata,
+      attachments: attachments.map(att => ({
+        filename: att.name || att.filename,
+        contentType: att.contentType || 'application/octet-stream',
+        size: att.size || 0,
+        url: att.url
+      })),
+      deliveryStatus: 'pending',
+      retries: 0
+    });
+
     const sendEmailFn = async () => {
       try {
+        const payload = {
+          sender: {
+            email: this.senderEmail,
+            name: this.senderName
+          },
+          to: [
+            {
+              email: to.email,
+              name: to.name
+            }
+          ],
+          subject,
+          htmlContent
+        };
+
+        // Add attachments if provided
+        if (attachments && attachments.length > 0) {
+          payload.attachment = attachments.map(att => ({
+            name: att.name || att.filename,
+            url: att.url
+          }));
+        }
+
         const response = await axios.post(
           `${this.apiUrl}/smtp/email`,
-          {
-            sender: {
-              email: this.senderEmail,
-              name: this.senderName
-            },
-            to: [
-              {
-                email: to.email,
-                name: to.name
-              }
-            ],
-            subject,
-            htmlContent
-          },
+          payload,
           {
             headers: {
               'Accept': 'application/json',
@@ -105,16 +136,37 @@ class EmailService {
           }
         );
 
+        // Update EmailLog with success
+        emailLog.brevoMessageId = response.data.messageId;
+        emailLog.deliveryStatus = 'sent';
+        emailLog.sentAt = new Date();
+        await emailLog.save();
+
+        logger.info('Email sent and logged successfully', {
+          emailId: emailLog._id,
+          messageId: response.data.messageId,
+          recipient: to.email,
+          emailType
+        });
+
         return {
           messageId: response.data.messageId,
+          emailId: emailLog._id.toString(),
           success: true
         };
       } catch (error) {
         logger.error('Brevo API error', {
           status: error.response?.status,
           data: error.response?.data,
-          message: error.message
+          message: error.message,
+          recipient: to.email
         });
+
+        // Update EmailLog with failure
+        emailLog.deliveryStatus = 'failed';
+        emailLog.errorMessage = error.message;
+        emailLog.errorStack = error.stack;
+        await emailLog.save();
 
         // Don't retry on client errors (4xx)
         if (error.response?.status >= 400 && error.response?.status < 500) {
@@ -125,12 +177,20 @@ class EmailService {
       }
     };
 
-    return retryWithBackoff(
-      sendEmailFn,
-      this.retryConfig.maxRetries,
-      this.retryConfig.initialDelay,
-      this.retryConfig.maxDelay
-    );
+    // Execute with retry logic
+    try {
+      return await retryWithBackoff(
+        sendEmailFn,
+        this.retryConfig.maxRetries,
+        this.retryConfig.initialDelay,
+        this.retryConfig.maxDelay
+      );
+    } catch (error) {
+      // Final failure - increment retry count
+      emailLog.retries += 1;
+      await emailLog.save();
+      throw error;
+    }
   }
 
   /**
