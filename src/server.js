@@ -20,7 +20,7 @@ const invitationsRoutes = require('./routes/v1/invitations');
  */
 
 const app = express();
-const PORT = process.env.PORT || 3015;
+const PORT = process.env.PORT || 3016;
 
 // Trust proxy (for Railway deployment)
 app.set('trust proxy', 1);
