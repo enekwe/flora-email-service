@@ -59,11 +59,11 @@ const CACHE_TTL = {
 };
 
 const EMAIL_TEMPLATES = {
-  GP_INVITATION: 'gp-invitation',
-  LP_PERSON_INVITATION: 'lp-person-invitation',
-  LP_INSTITUTION_INVITATION: 'lp-institution-invitation',
-  FOUNDER_INVITATION: 'founder-invitation',
-  ADMIN_INVITATION: 'admin-invitation'
+  GP_INVITATION: 'invitations/gp-invitation',
+  LP_PERSON_INVITATION: 'invitations/lp-person-invitation',
+  LP_INSTITUTION_INVITATION: 'invitations/lp-institution-invitation',
+  FOUNDER_INVITATION: 'invitations/founder-invitation',
+  ADMIN_INVITATION: 'invitations/admin-invitation'
 };
 
 const AUDIT_ACTIONS = {
