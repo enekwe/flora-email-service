@@ -13,8 +13,8 @@ const crypto = require('crypto');
 const PlatformInvitationSchema = new mongoose.Schema({
   invitationId: {
     type: String,
-    unique: true,
-    required: true
+    unique: true
+    // Auto-generated in pre-save hook, not required in schema
   },
 
   invitedBy: {
@@ -138,8 +138,8 @@ const PlatformInvitationSchema = new mongoose.Schema({
 
   token: {
     type: String,
-    unique: true,
-    required: true
+    unique: true
+    // Auto-generated in pre-save hook, not required in schema
   },
 
   tokenExpiresAt: {
